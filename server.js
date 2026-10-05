@@ -1,83 +1,140 @@
+
 const express = require("express");
 
 const app = express();
+const PORT = 3000;
 
 app.use(express.json());
 
-// Sample books
-let books = [
+// Student data
+let students = [
   {
-    id: 1,
-    title: "The Alchemist",
-    author: "Paulo Coelho"
+    name: "Sahasra",
+    rollNo: "101",
+    sem: 3,
+    grade: "A"
   },
   {
-    id: 2,
-    title: "Wings of Fire",
-    author: "A.P.J. Abdul Kalam"
+    name: "Priya",
+    rollNo: "102",
+    sem: 3,
+    grade: "A+"
+  },
+  {
+    name: "Rahul",
+    rollNo: "103",
+    sem: 2,
+    grade: "B"
   }
 ];
 
-// GET - Get all books
-app.get("/books", (req, res) => {
-  res.json(books);
+// Home route
+app.get("/", (req, res) => {
+  res.send("Student Management REST API is running");
 });
 
-// GET - Get one book
-app.get("/books/:id", (req, res) => {
-  const book = books.find(b => b.id == req.params.id);
+// GET - All students
+app.get("/api/students", (req, res) => {
+  res.json(students);
+});
 
-  if (!book) {
-    return res.status(404).json({ message: "Book not found" });
+// GET - Student by roll number
+app.get("/api/students/:rollNo", (req, res) => {
+  const student = students.find(
+    s => s.rollNo === req.params.rollNo
+  );
+
+  if (!student) {
+    return res.status(404).json({
+      message: "Student not found"
+    });
   }
 
-  res.json(book);
+  res.json(student);
 });
 
-// POST - Add a new book
-app.post("/books", (req, res) => {
-  const newBook = {
-    id: books.length + 1,
-    title: req.body.title,
-    author: req.body.author
+// POST - Add new student
+app.post("/api/students", (req, res) => {
+  const { name, rollNo, sem, grade } = req.body;
+
+  if (!name || !rollNo || sem === undefined || !grade) {
+    return res.status(400).json({
+      message: "All student details are required"
+    });
+  }
+
+  const exists = students.find(s => s.rollNo === String(rollNo));
+
+  if (exists) {
+    return res.status(409).json({
+      message: "Roll number already exists"
+    });
+  }
+
+  const newStudent = {
+    name,
+    rollNo: String(rollNo),
+    sem,
+    grade
   };
 
-  books.push(newBook);
+  students.push(newStudent);
 
-  res.status(201).json(newBook);
+  res.status(201).json({
+    message: "Student added successfully",
+    student: newStudent
+  });
 });
 
-// PUT - Update a book
-app.put("/books/:id", (req, res) => {
-  const book = books.find(b => b.id == req.params.id);
+// PUT - Update semester
+app.put("/api/students/:rollNo", (req, res) => {
+  const student = students.find(
+    s => s.rollNo === req.params.rollNo
+  );
 
-  if (!book) {
-    return res.status(404).json({ message: "Book not found" });
+  if (!student) {
+    return res.status(404).json({
+      message: "Student not found"
+    });
   }
 
-  book.title = req.body.title;
-  book.author = req.body.author;
+  const { sem } = req.body;
 
-  res.json(book);
-});
-
-// DELETE - Delete a book
-app.delete("/books/:id", (req, res) => {
-  const index = books.findIndex(b => b.id == req.params.id);
-
-  if (index === -1) {
-    return res.status(404).json({ message: "Book not found" });
+  if (sem === undefined) {
+    return res.status(400).json({
+      message: "Semester is required"
+    });
   }
 
-  const deletedBook = books.splice(index, 1);
+  student.sem = sem;
 
   res.json({
-    message: "Book deleted successfully",
-    book: deletedBook[0]
+    message: "Semester updated successfully",
+    student
+  });
+});
+
+// DELETE - Remove student
+app.delete("/api/students/:rollNo", (req, res) => {
+  const index = students.findIndex(
+    s => s.rollNo === req.params.rollNo
+  );
+
+  if (index === -1) {
+    return res.status(404).json({
+      message: "Student not found"
+    });
+  }
+
+  const deletedStudent = students.splice(index, 1);
+
+  res.json({
+    message: "Student deleted successfully",
+    student: deletedStudent[0]
   });
 });
 
 // Start server
-app.listen(3000, () => {
-  console.log("Server running at http://localhost:3000");
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
 });
